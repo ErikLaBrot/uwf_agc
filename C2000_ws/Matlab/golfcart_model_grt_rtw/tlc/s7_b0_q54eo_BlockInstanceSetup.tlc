@@ -1,8 +1,0 @@
-%implements s7_b0_q54eo_BlockInstanceSetup "C"
-
-%function BlockInstanceSetup(block, system) Output
-%% Subsystems with iterators in IR:
-%% TLC Block Registration buffer:
-%<LibAddToCommonIncludes("MW_c2000DAC.h")>
-%% END  Block Registration buffer
-%endfunction
