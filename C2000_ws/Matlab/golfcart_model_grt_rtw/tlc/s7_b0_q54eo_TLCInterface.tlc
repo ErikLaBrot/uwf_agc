@@ -1,0 +1,102 @@
+%implements s7_b0_q54eo_TLCInterface "C"
+
+%function getOutputAddr_7_0_0_1_0_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.SCIReceive" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutput_7_0_0_1_0_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.SCIReceive" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getInputAddr_7_9_0_1_1_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.DataTypeConversion"
+%endfunction
+
+%function getInput_7_9_0_1_1_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.DataTypeConversion"
+%endfunction
+
+%function getOutputAddr_7_10_0_1_2_1_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.CANReceive_o2" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutput_7_10_0_1_2_1_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.CANReceive_o2" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutputAddr_7_12_0_1_3_1_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.CANReceive1_o2" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutput_7_12_0_1_3_1_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.CANReceive1_o2" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getInputAddr_7_16_0_1_4_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.TmpSignalConversionAtSCITransmi" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getInput_7_16_0_1_4_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.TmpSignalConversionAtSCITransmi" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutputAddr_7_0_0_3_0_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.SCIReceive" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutput_7_0_0_3_0_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.SCIReceive" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getInputAddr_7_9_0_3_1_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.DataTypeConversion"
+%endfunction
+
+%function getInput_7_9_0_3_1_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.DataTypeConversion"
+%endfunction
+
+%function getOutputAddr_7_10_0_3_2_1_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.CANReceive_o2" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutput_7_10_0_3_2_1_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.CANReceive_o2" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutputAddr_7_12_0_3_3_1_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.CANReceive1_o2" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getOutput_7_12_0_3_3_1_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.CANReceive1_o2" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getInputAddr_7_16_0_3_4_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "&golfcart_model_B.TmpSignalConversionAtSCITransmi" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+
+%function getInput_7_16_0_3_4_0_0(opaqueBlock, block, lcv, ucv, sigIdx, reim) void
+
+%return "golfcart_model_B.TmpSignalConversionAtSCITransmi" + SLibCG_ArrayIndexer(ucv, lcv, sigIdx)
+%endfunction
+

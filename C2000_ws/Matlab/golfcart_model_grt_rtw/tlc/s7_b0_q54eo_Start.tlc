@@ -1,0 +1,42 @@
+%implements s7_b0_q54eo_Start "C"
+
+%function Start(block, system) Output
+%assign cfgTxt = ""
+%openfile cfgTxt
+%assign localVarDecl = ""
+%assign tlcStartFcnOfS7B0 = OpaqueTLCBlockFcn("Start", 7, 0, 0, 1, 0)
+%assign tlcStartFcnOfS7B9 = OpaqueTLCBlockFcn("Start", 7, 9, 0, 1, 1)
+%assign tlcStartFcnOfS7B10 = OpaqueTLCBlockFcn("Start", 7, 10, 0, 1, 2)
+%assign tlcStartFcnOfS7B12 = OpaqueTLCBlockFcn("Start", 7, 12, 0, 1, 3)
+%assign tlcStartFcnOfS7B16 = OpaqueTLCBlockFcn("Start", 7, 16, 0, 1, 4)
+%if !WHITE_SPACE(tlcStartFcnOfS7B0)
+/* Start for S-Function (c28xsci_rx): '<S4>/SCI Receive' */
+%<tlcStartFcnOfS7B0>\
+%endif
+%if !WHITE_SPACE(tlcStartFcnOfS7B9)
+/* Start for S-Function (c28xsci_tx): '<S3>/SCI Transmit' */
+%<tlcStartFcnOfS7B9>\
+%endif
+%if !WHITE_SPACE(tlcStartFcnOfS7B10)
+/* Start for S-Function (c280xcanrcv): '<S1>/CAN Receive' */
+%<tlcStartFcnOfS7B10>\
+%endif
+%if !WHITE_SPACE(tlcStartFcnOfS7B12)
+/* Start for S-Function (c280xcanrcv): '<S1>/CAN Receive1' */
+%<tlcStartFcnOfS7B12>\
+%endif
+%if !WHITE_SPACE(tlcStartFcnOfS7B16)
+/* Start for S-Function (c28xsci_tx): '<S4>/SCI Transmit' */
+%<tlcStartFcnOfS7B16>\
+%endif
+%closefile cfgTxt
+%<cfgTxt>
+%endfunction
+%function StartFcnProtoType(block, system) Output
+%assign fcnProtoType = ""
+%openfile fcnProtoType
+static void Start(\
+%assign comma = ""
+%closefile fcnProtoType
+%<SLibCG_SetFcnProtoType(0, 1, fcnProtoType)>
+%endfunction

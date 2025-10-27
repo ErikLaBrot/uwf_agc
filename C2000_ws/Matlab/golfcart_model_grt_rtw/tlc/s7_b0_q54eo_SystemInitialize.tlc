@@ -1,0 +1,27 @@
+%implements s7_b0_q54eo_SystemInitialize "C"
+
+%function SystemInitialize(block, system) Output
+%assign cfgTxt = ""
+%openfile cfgTxt
+%assign localVarDecl = ""
+%<SLibInsertAsyncTaskInitializeCode(system)>
+%<SLibWriteMachineInitialize()>
+/* Start for MATLABSystem: '<S2>/DAC' */
+golfcart_model_DW.obj.matlabCodegenIsDeleted = false;
+golfcart_model_DW.objisempty = true;
+golfcart_model_DW.obj.isInitialized = 1;
+MW_ConfigureDACA();
+golfcart_model_DW.obj.isSetupComplete = true;
+%<SLibInsertInitPeriodicCStatesFcn(system)>
+%closefile cfgTxt
+%<cfgTxt>
+%<LibSetSystemField(system, "CachedSystemInitializeLocalVars", localVarDecl)>
+%endfunction
+%function SystemInitializeFcnProtoType(block, system) Output
+%assign fcnProtoType = ""
+%openfile fcnProtoType
+static void SystemInitialize(\
+%assign comma = ""
+%closefile fcnProtoType
+%<SLibCG_SetFcnProtoType(0, 2, fcnProtoType)>
+%endfunction
