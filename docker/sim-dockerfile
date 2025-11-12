@@ -1,0 +1,28 @@
+# Use ROS2 Humble base image
+FROM osrf/ros:humble-desktop-full
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+
+# Install Gazebo Fortress
+RUN apt-get update && apt-get install -y \
+    wget \
+    lsb-release \
+    gnupg \
+    && wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y \
+    gz-fortress \
+    ros-humble-ros-gz \
+    && rm -rf /var/lib/apt/lists/*
+
+# Source ROS2 setup in bashrc
+RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
+
+# Set working directory
+WORKDIR /root/sim_ws
+
+CMD ["/bin/bash"]

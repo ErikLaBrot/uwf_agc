@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>agc_golfcart_sim</name>
+  <version>1.0.0</version>
+  <description>Gazebo simulation for UWF AGC autonomous golf cart</description>
+  
+  <maintainer email="agc@uwf.edu">UWF AGC Team</maintainer>
+  <license>MIT</license>
+  
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  
+  <!-- Gazebo dependencies -->
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  
+  <!-- ROS2 message dependencies -->
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  
+  <!-- Python dependencies -->
+  <depend>rclpy</depend>
+  <depend>rclcpp</depend>
+  <exec_depend>python3-serial</exec_depend>
+  
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
