@@ -12,69 +12,35 @@ def generate_launch_description():
     controller_config = os.path.join(pkg_dir, 'config', 'ros2_controllers.yaml')
     
     return LaunchDescription([
-
+        # ROS2 Control Node
         Node(
             package='ros2_control_node',
             executable='ros2_control_node',
             parameters=[controller_config],
             output='screen'
         ),
+
         # Spawn joint state broadcaster
-        
         Node(
             package='controller_manager',
             executable='spawner',
             arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'],
             output='screen'
         ),
- 
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['joint_state_broadcaster'],
-            ),
 
-        # Spawn steering controllers
+        # Spawn steering controller (single controller for steering input)
         Node(
             package='controller_manager',
             executable='spawner',
-            arguments=['front_left_steering_controller', '--controller-manager', '/controller_manager'],
+            arguments=['steering_controller', '--controller-manager', '/controller_manager'],
             output='screen'
         ),
-        
+
+        # Spawn rear drive controller (group controller for both rear wheels)
         Node(
             package='controller_manager',
             executable='spawner',
-            arguments=['front_right_steering_controller', '--controller-manager', '/controller_manager'],
-            output='screen'
-        ),
-        
-        # Spawn wheel velocity controllers
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['front_left_wheel_controller', '--controller-manager', '/controller_manager'],
-            output='screen'
-        ),
-        
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['front_right_wheel_controller', '--controller-manager', '/controller_manager'],
-            output='screen'
-        ),
-        
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['rear_left_wheel_controller', '--controller-manager', '/controller_manager'],
-            output='screen'
-        ),
-        
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['rear_right_wheel_controller', '--controller-manager', '/controller_manager'],
+            arguments=['rear_drive_controller', '--controller-manager', '/controller_manager'],
             output='screen'
         ),
     ])
