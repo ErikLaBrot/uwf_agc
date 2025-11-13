@@ -85,7 +85,21 @@ def generate_launch_description():
         ],
         output='screen'
     )
-    
+
+    # Include controller spawner launch file
+    spawn_controllers = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_agc_sim, 'launch', 'spawn_controllers.launch.py')
+        )
+    )
+
+    # Include C2000 bridge launch file
+    c2000_bridge = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_agc_sim, 'launch', 'c2000_sim_bridge.launch.py')
+        )
+    )
+
     return LaunchDescription([
         SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', model_path),
         gazebo,
@@ -95,4 +109,14 @@ def generate_launch_description():
             actions=[spawn_entity]
         ),
         bridge,
+        # Spawn controllers after robot is loaded (15 second delay)
+        TimerAction(
+            period=15.0,
+            actions=[spawn_controllers]
+        ),
+        # Start C2000 bridge after controllers are spawned (15 second delay)
+        TimerAction(
+            period=15.0,
+            actions=[c2000_bridge]
+        ),
     ])
