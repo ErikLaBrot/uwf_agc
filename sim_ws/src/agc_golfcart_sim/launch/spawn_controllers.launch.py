@@ -32,7 +32,7 @@ def generate_launch_description():
             package='controller_manager',
             executable='spawner',
             arguments=['joint_state_broadcaster'],
-            )
+            ),
 
         # Spawn steering controllers
         Node(
