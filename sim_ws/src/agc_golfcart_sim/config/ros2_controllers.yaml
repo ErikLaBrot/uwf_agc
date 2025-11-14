@@ -11,7 +11,7 @@ controller_manager:
     
     # Drive controllers for rear wheels
     rear_drive_controller:
-      type: velocity_controllers/JointGroupVelocityController
+      type: effort_controllers/JointGroupEffortController
 
 # Controller configurations
 steering_controller:

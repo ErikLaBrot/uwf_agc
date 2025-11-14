@@ -2,7 +2,7 @@ c2000_sim_bridge:
   ros__parameters:
     # Serial port configuration
     serial_port: "/dev/ttyUSB0"
-    baud_rate: 115200
+    baud_rate: 250000  # Match Matlab configuration
     update_rate: 50.0  # Hz - rate to send sensor feedback to C2000
     
     # ROS2 topic names
@@ -11,8 +11,8 @@ c2000_sim_bridge:
     drive_command_topic: "/rear_drive_controller/commands"
 
     # Encoder simulation parameters
-    steering_encoder_cpr: 3000  # BDSG-71-110 with -R5 option
-    drive_encoder_cpr: 2048     # Virtual encoder for drive motor
+    steering_encoder_cpr: 2400  # Match Matlab configuration
+    drive_encoder_cpr: 2400     # Match Matlab configuration
 
     # Joint names to extract from /joint_states
     steering_joint_name: "steering_input_joint"

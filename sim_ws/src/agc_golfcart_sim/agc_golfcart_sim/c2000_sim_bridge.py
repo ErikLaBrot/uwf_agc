@@ -38,8 +38,10 @@ class C2000SimBridge(Node):
         self.drive_encoder_counts = 0
         
         # Motor command state (received from C2000)
-        self.steering_motor_cmd = 0  # -100 to +100
-        self.drive_motor_cmd = 0     # -100 to +100
+        # Steering: Sabertooth format 0-127 uint8 (0-63 reverse, 64=stop, 65-127 forward)
+        # Drive: Percentage format -100 to +100 int8
+        self.steering_motor_cmd = 64  # Sabertooth format: 0-127 (64 = stop)
+        self.drive_motor_cmd = 0      # Percentage format: -100 to +100 (0 = stop)
         
         # Initialize serial port
         self.serial_port = None
@@ -106,13 +108,13 @@ class C2000SimBridge(Node):
     """Declare all ROS parameters with default values"""
     def _declare_parameters(self):
         self.declare_parameter('serial_port', '/dev/ttyUSB0')
-        self.declare_parameter('baud_rate', 115200)
+        self.declare_parameter('baud_rate', 250000)
         self.declare_parameter('update_rate', 50.0)
         self.declare_parameter('joint_states_topic', '/joint_states')
         self.declare_parameter('steering_command_topic', '/steering_controller/commands')
         self.declare_parameter('drive_command_topic', '/rear_drive_controller/commands')
-        self.declare_parameter('steering_encoder_cpr', 3000)
-        self.declare_parameter('drive_encoder_cpr', 2048)
+        self.declare_parameter('steering_encoder_cpr', 2400)
+        self.declare_parameter('drive_encoder_cpr', 2400)
         self.declare_parameter('steering_joint_name', 'steering_input_joint')
         self.declare_parameter('drive_joint_name', 'rear_left_wheel_joint')
         self.declare_parameter('steering_max_torque', 4.90)
@@ -198,42 +200,57 @@ class C2000SimBridge(Node):
                         packet_id = self.serial_port.read(1)[0]
                         
                         if packet_id == self.MOTOR_PACKET_ID:
-                            # Motor command packet: [START][ID][STEER_CMD(2)][DRIVE_CMD(2)][END]
-                            # Total: 8 bytes (6 remaining after start and ID)
-                            data = self.serial_port.read(5)
-                            
-                            if len(data) == 5 and data[4] == self.END_BYTE:
-                                # Unpack motor commands (int16, -100 to +100)
-                                steer_cmd, drive_cmd = struct.unpack('<hh', data[0:4])
-                                
+                            # Motor command packet: [START][ID][STEER_CMD(1)][DRIVE_CMD(1)][END]
+                            # Steering: Sabertooth 0-127 uint8
+                            # Drive: Percentage -100 to +100 int8
+                            # Total: 5 bytes (3 remaining after start and ID)
+                            data = self.serial_port.read(3)
+
+                            if len(data) == 3 and data[2] == self.END_BYTE:
+                                # Unpack motor commands
+                                # B = unsigned char (0-255), b = signed char (-128 to 127)
+                                steer_cmd, drive_cmd = struct.unpack('<Bb', data[0:2])
+
                                 self.steering_motor_cmd = steer_cmd
                                 self.drive_motor_cmd = drive_cmd
-                                
+
                                 self.get_logger().debug(
-                                    f'RX <- Steer cmd: {steer_cmd}, Drive cmd: {drive_cmd}',
+                                    f'RX <- Steer cmd: {steer_cmd} (0-127), Drive cmd: {drive_cmd} (-100 to +100)',
                                     throttle_duration_sec=1.0
                                 )
-                                
+
                                 # Publish to effort controllers
                                 self._publish_motor_commands()
                             
             except Exception as e:
                 self.get_logger().error(f'Serial receive error: {e}')
 
-    """Convert motor percentage commands to effort and publish"""
+    """Convert motor commands to effort and publish"""
     def _publish_motor_commands(self):
-        # Convert percentage (-100 to +100) to effort (torque in Nm)
-        # Using motor specs: steering stall torque = 4.90 Nm
-        # This maps percentage to effort linearly
-        
-        steering_effort = (self.steering_motor_cmd / 100.0) * self.steering_max_torque
-        drive_effort = (self.drive_motor_cmd / 100.0) * self.drive_max_torque
-        
+        # Steering: Convert Sabertooth format (0-127 uint8) to effort
+        # 0-63: reverse (-100% to 0%), 64: stop (0%), 65-127: forward (0% to +100%)
+        if self.steering_motor_cmd < 64:
+            # Reverse: 0 maps to -100%, 63 maps to ~0%
+            steering_normalized = (self.steering_motor_cmd - 64) / 64.0
+        elif self.steering_motor_cmd == 64:
+            # Stop
+            steering_normalized = 0.0
+        else:
+            # Forward: 65 maps to ~0%, 127 maps to +100%
+            steering_normalized = (self.steering_motor_cmd - 64) / 63.0
+
+        steering_effort = steering_normalized * self.steering_max_torque
+
+        # Drive: Convert percentage format (-100 to +100) to effort
+        # -100 = full reverse, 0 = stop, +100 = full forward
+        drive_normalized = self.drive_motor_cmd / 100.0
+        drive_effort = drive_normalized * self.drive_max_torque
+
         # Publish steering command
         steering_msg = Float64MultiArray()
         steering_msg.data = [steering_effort]
         self.steering_cmd_pub.publish(steering_msg)
-        
+
         # Publish drive command (both rear wheels)
         drive_msg = Float64MultiArray()
         drive_msg.data = [drive_effort, drive_effort]
@@ -249,7 +266,7 @@ class C2000SimBridge(Node):
             self.get_logger().debug(
                 f'State - Steer enc: {self.steering_encoder_counts}, '
                 f'Drive enc: {self.drive_encoder_counts}, '
-                f'Steer cmd: {self.steering_motor_cmd}%, Drive cmd: {self.drive_motor_cmd}%',
+                f'Steer cmd: {self.steering_motor_cmd} (0-127), Drive cmd: {self.drive_motor_cmd} (-100 to +100)',
                 throttle_duration_sec=2.0
             )
         
