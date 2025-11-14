@@ -18,9 +18,9 @@ set -euo pipefail
 ########################################
 # Defaults
 ########################################
-CCS_DSLITE_DEFAULT="/opt/ti/ccs2001/ccs/ccs_base/DebugServer/bin/DSLite"
+CCS_DSLITE_DEFAULT="/home/erik/ti/ccs2001/ccs/ccs_base/DebugServer/bin/DSLite"
 CCXML_DEFAULT="/usr/local/MATLAB/R2025b/toolbox/c2b/tic2000/CCS_Config/f28379D.ccxml"
-DEFAULT_OUT="../C2000_ws/Matlab/golfcart_model.out"
+DEFAULT_OUT="../C2000_ws/Matlab/sim_model.out"
 
 ########################################
 # Argument parsing
