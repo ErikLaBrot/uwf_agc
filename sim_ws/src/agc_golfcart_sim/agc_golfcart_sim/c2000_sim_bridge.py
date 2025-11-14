@@ -38,9 +38,10 @@ class C2000SimBridge(Node):
         self.drive_encoder_counts = 0
         
         # Motor command state (received from C2000)
-        # Sabertooth format: 0-127 uint8 (0-63 reverse, 64=stop, 65-127 forward)
-        self.steering_motor_cmd = 64  # Sabertooth format: 0-127
-        self.drive_motor_cmd = 64     # Sabertooth format: 0-127
+        # Steering: Sabertooth format 0-127 uint8 (0-63 reverse, 64=stop, 65-127 forward)
+        # Drive: Percentage format -100 to +100 int8
+        self.steering_motor_cmd = 64  # Sabertooth format: 0-127 (64 = stop)
+        self.drive_motor_cmd = 0      # Percentage format: -100 to +100 (0 = stop)
         
         # Initialize serial port
         self.serial_port = None
@@ -200,19 +201,21 @@ class C2000SimBridge(Node):
                         
                         if packet_id == self.MOTOR_PACKET_ID:
                             # Motor command packet: [START][ID][STEER_CMD(1)][DRIVE_CMD(1)][END]
-                            # Sabertooth format: 0-127 uint8
+                            # Steering: Sabertooth 0-127 uint8
+                            # Drive: Percentage -100 to +100 int8
                             # Total: 5 bytes (3 remaining after start and ID)
                             data = self.serial_port.read(3)
 
                             if len(data) == 3 and data[2] == self.END_BYTE:
-                                # Unpack motor commands (uint8, 0-127 Sabertooth format)
-                                steer_cmd, drive_cmd = struct.unpack('<BB', data[0:2])
+                                # Unpack motor commands
+                                # B = unsigned char (0-255), b = signed char (-128 to 127)
+                                steer_cmd, drive_cmd = struct.unpack('<Bb', data[0:2])
 
                                 self.steering_motor_cmd = steer_cmd
                                 self.drive_motor_cmd = drive_cmd
 
                                 self.get_logger().debug(
-                                    f'RX <- Steer cmd: {steer_cmd}, Drive cmd: {drive_cmd}',
+                                    f'RX <- Steer cmd: {steer_cmd} (0-127), Drive cmd: {drive_cmd} (-100 to +100)',
                                     throttle_duration_sec=1.0
                                 )
 
@@ -222,28 +225,26 @@ class C2000SimBridge(Node):
             except Exception as e:
                 self.get_logger().error(f'Serial receive error: {e}')
 
-    """Convert Sabertooth motor commands to effort and publish"""
+    """Convert motor commands to effort and publish"""
     def _publish_motor_commands(self):
-        # Convert Sabertooth format (0-127 uint8) to effort (torque in Nm)
-        # 0-63: reverse, 64: stop, 65-127: forward
-        # Map to normalized value: -1.0 (full reverse) to +1.0 (full forward)
+        # Steering: Convert Sabertooth format (0-127 uint8) to effort
+        # 0-63: reverse (-100% to 0%), 64: stop (0%), 65-127: forward (0% to +100%)
+        if self.steering_motor_cmd < 64:
+            # Reverse: 0 maps to -100%, 63 maps to ~0%
+            steering_normalized = (self.steering_motor_cmd - 64) / 64.0
+        elif self.steering_motor_cmd == 64:
+            # Stop
+            steering_normalized = 0.0
+        else:
+            # Forward: 65 maps to ~0%, 127 maps to +100%
+            steering_normalized = (self.steering_motor_cmd - 64) / 63.0
 
-        def sabertooth_to_effort(cmd, max_torque):
-            """Convert Sabertooth command (0-127) to effort"""
-            if cmd < 64:
-                # Reverse: 0-63 maps to -1.0 to 0.0
-                normalized = (cmd - 64) / 64.0
-            elif cmd == 64:
-                # Stop
-                normalized = 0.0
-            else:
-                # Forward: 65-127 maps to 0.0 to +1.0
-                normalized = (cmd - 64) / 63.0
+        steering_effort = steering_normalized * self.steering_max_torque
 
-            return normalized * max_torque
-
-        steering_effort = sabertooth_to_effort(self.steering_motor_cmd, self.steering_max_torque)
-        drive_effort = sabertooth_to_effort(self.drive_motor_cmd, self.drive_max_torque)
+        # Drive: Convert percentage format (-100 to +100) to effort
+        # -100 = full reverse, 0 = stop, +100 = full forward
+        drive_normalized = self.drive_motor_cmd / 100.0
+        drive_effort = drive_normalized * self.drive_max_torque
 
         # Publish steering command
         steering_msg = Float64MultiArray()
@@ -265,7 +266,7 @@ class C2000SimBridge(Node):
             self.get_logger().debug(
                 f'State - Steer enc: {self.steering_encoder_counts}, '
                 f'Drive enc: {self.drive_encoder_counts}, '
-                f'Steer cmd: {self.steering_motor_cmd} (0-127), Drive cmd: {self.drive_motor_cmd} (0-127)',
+                f'Steer cmd: {self.steering_motor_cmd} (0-127), Drive cmd: {self.drive_motor_cmd} (-100 to +100)',
                 throttle_duration_sec=2.0
             )
         
