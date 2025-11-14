@@ -109,11 +109,11 @@ class C2000SimBridge(Node):
         self.declare_parameter('baud_rate', 115200)
         self.declare_parameter('update_rate', 50.0)
         self.declare_parameter('joint_states_topic', '/joint_states')
-        self.declare_parameter('steering_command_topic', '/steering_effort_controller/commands')
-        self.declare_parameter('drive_command_topic', '/rear_axle_effort_controller/commands')
+        self.declare_parameter('steering_command_topic', '/steering_controller/commands')
+        self.declare_parameter('drive_command_topic', '/rear_drive_controller/commands')
         self.declare_parameter('steering_encoder_cpr', 3000)
         self.declare_parameter('drive_encoder_cpr', 2048)
-        self.declare_parameter('steering_joint_name', 'front_left_steering_joint')
+        self.declare_parameter('steering_joint_name', 'steering_input_joint')
         self.declare_parameter('drive_joint_name', 'rear_left_wheel_joint')
         self.declare_parameter('steering_max_torque', 4.90)
         self.declare_parameter('drive_max_torque', 50.0)
@@ -149,10 +149,11 @@ class C2000SimBridge(Node):
             if self.drive_joint_name in msg.name:
                 idx = msg.name.index(self.drive_joint_name)
                 self.drive_velocity = msg.velocity[idx]
-                # Convert velocity to encoder counts (simplified - needs integration)
-                # For now, just scale velocity
+                # Convert position (radians) to encoder counts
+                # Full rotation (2π radians) = drive_encoder_cpr counts
+                joint_position = msg.position[idx]
                 self.drive_encoder_counts = int(
-                    self.drive_velocity * 10.0  # Placeholder scaling
+                    (joint_position / (2.0 * math.pi)) * self.drive_encoder_cpr
                 )
         
         except (ValueError, IndexError) as e:

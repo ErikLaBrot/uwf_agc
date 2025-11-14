@@ -7,15 +7,15 @@ c2000_sim_bridge:
     
     # ROS2 topic names
     joint_states_topic: "/joint_states"
-    steering_command_topic: "/steering_effort_controller/commands"
-    drive_command_topic: "/rear_axle_effort_controller/commands"
-    
+    steering_command_topic: "/steering_controller/commands"
+    drive_command_topic: "/rear_drive_controller/commands"
+
     # Encoder simulation parameters
     steering_encoder_cpr: 3000  # BDSG-71-110 with -R5 option
     drive_encoder_cpr: 2048     # Virtual encoder for drive motor
-    
+
     # Joint names to extract from /joint_states
-    steering_joint_name: "front_left_steering_joint"
+    steering_joint_name: "steering_input_joint"
     drive_joint_name: "rear_left_wheel_joint"  # Use one wheel as reference
 
     steering_max_torque: 4.90
