@@ -19,11 +19,7 @@ def generate_launch_description():
     model_path = os.path.join(pkg_agc_sim, 'models')
     model_sdf = os.path.join(model_path, 'golfcart', 'model.xacro.urdf')
     controller_config = os.path.join(pkg_agc_sim, 'config', 'ros2_controllers.yaml')
-    
-    SetEnvironmentVariable('AGC_CONFIG_PATH', pkg_agc_sim + '/config'),
-    SetEnvironmentVariable('IGN_GAZEBO_SYSTEM_PLUGIN_PATH', 
-                      os.path.join(get_package_share_directory('agc_golfcart_sim'), 'lib') + ':' +
-                      os.environ.get('IGN_GAZEBO_SYSTEM_PLUGIN_PATH', '')),
+
     # Launch Gazebo with the world file
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -101,22 +97,38 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        # Set environment variables for Gazebo plugins and resources
         SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', model_path),
+        SetEnvironmentVariable('AGC_CONFIG_PATH', os.path.join(pkg_agc_sim, 'config')),
+        SetEnvironmentVariable('IGN_GAZEBO_SYSTEM_PLUGIN_PATH',
+                              os.path.join(pkg_agc_sim, 'lib') + ':' +
+                              os.environ.get('IGN_GAZEBO_SYSTEM_PLUGIN_PATH', '')),
+
+        # Start Gazebo and robot state publisher immediately
         gazebo,
         robot_state_publisher,
+
+        # Spawn robot entity after Gazebo loads (10 second delay)
         TimerAction(
             period=10.0,
             actions=[spawn_entity]
         ),
-        bridge,
-        # Spawn controllers after robot is loaded (15 second delay)
+
+        # Start ros_ign_bridge after robot spawns (12 second delay)
+        TimerAction(
+            period=12.0,
+            actions=[bridge]
+        ),
+
+        # Spawn controllers after robot and bridge are ready (15 second delay)
         TimerAction(
             period=15.0,
             actions=[spawn_controllers]
         ),
-        # Start C2000 bridge after controllers are spawned (15 second delay)
+
+        # Start C2000 bridge after controllers are spawned (20 second delay)
         TimerAction(
-            period=15.0,
+            period=20.0,
             actions=[c2000_bridge]
         ),
     ])
