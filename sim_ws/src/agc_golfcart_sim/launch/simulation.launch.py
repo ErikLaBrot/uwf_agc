@@ -1,7 +1,9 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable, TimerAction
+from launch.actions import (ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable,
+                            TimerAction, RegisterEventHandler)
+from launch.event_handlers import OnProcessStart
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
@@ -86,13 +88,69 @@ def generate_launch_description():
     spawn_controllers = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_agc_sim, 'launch', 'spawn_controllers.launch.py')
-        )
+        ),
+        launch_arguments={
+            'robot_description': robot_description_content
+        }.items()
     )
 
     # Include C2000 bridge launch file
     c2000_bridge = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_agc_sim, 'launch', 'c2000_sim_bridge.launch.py')
+        )
+    )
+
+    # Event handlers for proper sequencing
+    # After robot_state_publisher starts, spawn entity after 10s delay for Gazebo to initialize
+    spawn_entity_delayed = RegisterEventHandler(
+        OnProcessStart(
+            target_action=robot_state_publisher,
+            on_start=[
+                TimerAction(
+                    period=10.0,
+                    actions=[spawn_entity]
+                )
+            ]
+        )
+    )
+
+    # After entity spawns, start bridge after 2s delay
+    start_bridge = RegisterEventHandler(
+        OnProcessStart(
+            target_action=spawn_entity,
+            on_start=[
+                TimerAction(
+                    period=2.0,
+                    actions=[bridge]
+                )
+            ]
+        )
+    )
+
+    # After bridge starts, spawn controllers after 3s delay
+    start_controllers = RegisterEventHandler(
+        OnProcessStart(
+            target_action=bridge,
+            on_start=[
+                TimerAction(
+                    period=3.0,
+                    actions=[spawn_controllers]
+                )
+            ]
+        )
+    )
+
+    # After controllers spawn, start C2000 bridge after 5s delay
+    start_c2000_bridge = RegisterEventHandler(
+        OnProcessStart(
+            target_action=spawn_controllers,
+            on_start=[
+                TimerAction(
+                    period=5.0,
+                    actions=[c2000_bridge]
+                )
+            ]
         )
     )
 
@@ -108,27 +166,9 @@ def generate_launch_description():
         gazebo,
         robot_state_publisher,
 
-        # Spawn robot entity after Gazebo loads (10 second delay)
-        TimerAction(
-            period=10.0,
-            actions=[spawn_entity]
-        ),
-
-        # Start ros_ign_bridge after robot spawns (12 second delay)
-        TimerAction(
-            period=12.0,
-            actions=[bridge]
-        ),
-
-        # Spawn controllers after robot and bridge are ready (15 second delay)
-        TimerAction(
-            period=15.0,
-            actions=[spawn_controllers]
-        ),
-
-        # Start C2000 bridge after controllers are spawned (20 second delay)
-        TimerAction(
-            period=20.0,
-            actions=[c2000_bridge]
-        ),
+        # Register event handlers for proper sequencing
+        spawn_entity_delayed,
+        start_bridge,
+        start_controllers,
+        start_c2000_bridge,
     ])
