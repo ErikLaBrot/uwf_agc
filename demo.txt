@@ -1,0 +1,54 @@
+# Terminal 2: Check what's running
+ros2 control list_controllers
+ros2 control list_hardware_interfaces
+
+# Terminal 3: Manually activate the steering controller
+ros2 control load_controller steering_controller
+ros2 control set_controller_state steering_controller active
+
+# Terminal 4: Send steering commands (effort in Nm, ±4.90 max for your motor)
+# Turn left (positive effort)
+ros2 topic pub --once /steering_controller/commands std_msgs/msg/Float64MultiArray "{data: [2.0]}"
+
+# Turn right (negative effort)
+ros2 topic pub --once /steering_controller/commands std_msgs/msg/Float64MultiArray "{data: [-2.0]}"
+
+# Center steering
+ros2 topic pub --once /steering_controller/commands std_msgs/msg/Float64MultiArray "{data: [0.0]}"
+
+----------------------------------------------------------------------------------------------------
+# Activate rear drive controller
+ros2 control load_controller rear_drive_controller
+ros2 control set_controller_state rear_drive_controller active
+
+# Drive forward (positive effort, adjust values based on your motor specs)
+ros2 topic pub --once /rear_drive_controller/commands std_msgs/msg/Float64MultiArray "{data: [10.0, 10.0]}"
+sleep 5
+
+# Drive backward
+ros2 topic pub --once /rear_drive_controller/commands std_msgs/msg/Float64MultiArray "{data: [-10.0, -10.0]}"
+sleep 5
+
+# Stop
+ros2 topic pub --once /rear_drive_controller/commands std_msgs/msg/Float64MultiArray "{data: [0.0, 0.0]}"
+sleep 1
+---------------------------------------------------------------------------------------------------
+# Save this as demo.sh
+echo "=== Steering Left ==="
+ros2 topic pub --once /steering_controller/commands std_msgs/msg/Float64MultiArray "{data: [2.0]}"
+sleep 2
+
+echo "=== Steering Right ==="
+ros2 topic pub --once /steering_controller/commands std_msgs/msg/Float64MultiArray "{data: [-2.0]}"
+sleep 2
+
+echo "=== Center Steering ==="
+ros2 topic pub --once /steering_controller/commands std_msgs/msg/Float64MultiArray "{data: [0.0]}"
+------------------------------------------------------------------------------------------------
+# Drive forward (positive effort, adjust values based on your motor specs)
+ros2 topic pub --once /rear_drive_controller/commands std_msgs/msg/Float64MultiArray "{data: [50.0, 50.0]}"
+sleep 5
+
+# Stop
+ros2 topic pub --once /rear_drive_controller/commands std_msgs/msg/Float64MultiArray "{data: [0.0, 0.0]}"
+sleep 1

@@ -2,12 +2,10 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (ExecuteProcess, IncludeLaunchDescription, SetEnvironmentVariable,
-                            TimerAction, RegisterEventHandler)
-from launch.event_handlers import OnProcessStart
+                            TimerAction)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
-from launch.actions import OpaqueFunction
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.parameter_descriptions import ParameterValue
 
@@ -19,7 +17,6 @@ def generate_launch_description():
     # Paths to world and model
     world_file = os.path.join(pkg_agc_sim, 'worlds', 'uwf_empty.world')
     model_path = os.path.join(pkg_agc_sim, 'models')
-    model_sdf = os.path.join(model_path, 'golfcart', 'model.xacro.urdf')
     controller_config = os.path.join(pkg_agc_sim, 'config', 'ros2_controllers.yaml')
 
     # Launch Gazebo with the world file
@@ -32,7 +29,6 @@ def generate_launch_description():
         }.items(),
     )
     
-
     robot_description_content = ParameterValue(
         Command([
             PathJoinSubstitution([FindExecutable(name='xacro')]),
@@ -54,104 +50,68 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description_content}]
     )
 
-    # Spawn the golf cart model using processed SDF
-    spawn_entity = Node(
-        package='ros_ign_gazebo',
-        executable='create',
-        arguments=[
-            '-topic', 'robot_description',  # Changed from -file
-            '-name', 'uwf_golfcart',
-            '-x', '0.0',
-            '-y', '0.0',
-            '-z', '1.0',
-            '-Y', '0.0'
-        ],
-        output='screen'
+    # Spawn the golf cart model - delayed to let Gazebo initialize
+    spawn_entity = TimerAction(
+        period=10.0,
+        actions=[
+            Node(
+                package='ros_ign_gazebo',
+                executable='create',
+                arguments=[
+                    '-topic', 'robot_description',
+                    '-name', 'uwf_golfcart',
+                    '-x', '0.0',
+                    '-y', '0.0',
+                    '-z', '1.0',
+                    '-Y', '0.0'
+                ],
+                output='screen'
+            )
+        ]
     )
 
-
-    # Bridge to connect Gazebo topics to ROS2 topics
-    bridge = Node(
-        package='ros_ign_bridge',
-        executable='parameter_bridge',
-        arguments=[
-            '/lidar@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
-            '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
-            '/imu@sensor_msgs/msg/Imu[ignition.msgs.IMU',
-            '/gps@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
-            '/joint_states@sensor_msgs/msg/JointState[ignition.msgs.Model',
-        ],
-        output='screen'
+    # Bridge to connect Gazebo topics to ROS2 topics - delayed after spawn
+    bridge = TimerAction(
+        period=12.0,
+        actions=[
+            Node(
+                package='ros_ign_bridge',
+                executable='parameter_bridge',
+                arguments=[
+                    '/lidar@sensor_msgs/msg/LaserScan[ignition.msgs.LaserScan',
+                    '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
+                    '/imu@sensor_msgs/msg/Imu[ignition.msgs.IMU',
+                    '/gps@sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat',
+                    '/joint_states@sensor_msgs/msg/JointState[ignition.msgs.Model',
+                ],
+                output='screen'
+            )
+        ]
     )
 
-    # Include controller spawner launch file
-    spawn_controllers = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_agc_sim, 'launch', 'spawn_controllers.launch.py')
-        ),
-        launch_arguments={
-            'robot_description': robot_description_content
-        }.items()
-    )
-
-    # Include C2000 bridge launch file
-    c2000_bridge = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_agc_sim, 'launch', 'c2000_sim_bridge.launch.py')
-        )
-    )
-
-    # Event handlers for proper sequencing
-    # After robot_state_publisher starts, spawn entity after 10s delay for Gazebo to initialize
-    spawn_entity_delayed = RegisterEventHandler(
-        OnProcessStart(
-            target_action=robot_state_publisher,
-            on_start=[
-                TimerAction(
-                    period=10.0,
-                    actions=[spawn_entity]
+    # Include controller spawner launch file - delayed after bridge
+    # Don't pass robot_description as launch argument - controllers get it from robot_state_publisher
+    spawn_controllers = TimerAction(
+        period=15.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(pkg_agc_sim, 'launch', 'spawn_controllers.launch.py')
                 )
-            ]
-        )
+            )
+        ]
     )
 
-    # After entity spawns, start bridge after 2s delay
-    start_bridge = RegisterEventHandler(
-        OnProcessStart(
-            target_action=spawn_entity,
-            on_start=[
-                TimerAction(
-                    period=2.0,
-                    actions=[bridge]
+    # Include C2000 bridge launch file - delayed after controllers
+    c2000_bridge = TimerAction(
+        period=20.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(pkg_agc_sim, 'launch', 'c2000_sim_bridge.launch.py')
                 )
-            ]
-        )
-    )
-
-    # After bridge starts, spawn controllers after 3s delay
-    start_controllers = RegisterEventHandler(
-        OnProcessStart(
-            target_action=bridge,
-            on_start=[
-                TimerAction(
-                    period=3.0,
-                    actions=[spawn_controllers]
-                )
-            ]
-        )
-    )
-
-    # After controllers spawn, start C2000 bridge after 5s delay
-    start_c2000_bridge = RegisterEventHandler(
-        OnProcessStart(
-            target_action=spawn_controllers,
-            on_start=[
-                TimerAction(
-                    period=5.0,
-                    actions=[c2000_bridge]
-                )
-            ]
-        )
+            )
+        ]
     )
 
     return LaunchDescription([
@@ -166,9 +126,9 @@ def generate_launch_description():
         gazebo,
         robot_state_publisher,
 
-        # Register event handlers for proper sequencing
-        spawn_entity_delayed,
-        start_bridge,
-        start_controllers,
-        start_c2000_bridge,
+        # Start everything else with appropriate delays
+        spawn_entity,      # 10s
+        bridge,            # 12s
+        spawn_controllers, # 15s
+        c2000_bridge,      # 20s
     ])

@@ -1,9 +1,9 @@
 c2000_sim_bridge:
   ros__parameters:
     # Serial port configuration
-    serial_port: "/dev/ttyUSB0"
-    baud_rate: 250000  # Match Matlab configuration
-    update_rate: 50.0  # Hz - rate to send sensor feedback to C2000
+    serial_port: "/dev/ttyUSB1"
+    baud_rate: 500000  # Match Matlab configuration
+    update_rate: 100.0  # Hz - rate to send sensor feedback to C2000
     
     # ROS2 topic names
     joint_states_topic: "/joint_states"
@@ -18,5 +18,11 @@ c2000_sim_bridge:
     steering_joint_name: "steering_input_joint"
     drive_joint_name: "rear_left_wheel_joint"  # Use one wheel as reference
 
-    steering_max_torque: 4.90
+    steering_max_torque: 1.1
     drive_max_torque: 50.0
+    brake_max_torque: 50.0
+    brake_velocity_threshold: 0.05
+
+    # Column_radians = steering_gear_ratio * joint_radians
+    # Tune so that center -> full lock = 3.5 * 2400 counts
+    steering_gear_ratio: 28.0   # start with 1.0, adjust later
